@@ -81,7 +81,7 @@ int main(int argc, char** argv)
 	// Note interface closing is also differentiated !
 	//
 	//errorCode = sbgInterfaceSerialCreate(&sbgInterface, "/dev/cu.usbserial-FTX2GE57", 921600);		// Example for Unix using a FTDI Usb2Uart converter
-	errorCode = sbgInterfaceSerialCreate(&sbgInterface, "COM3", 115200);							// Example for Windows serial communication
+	errorCode = sbgInterfaceSerialCreate(&sbgInterface, "COM3", 921600);							// Example for Windows serial communication
 
 	//
 	// Test that the interface has been created
