@@ -42,14 +42,24 @@ SbgErrorCode onLogReceived(SbgEComHandle *pHandle, SbgEComCmdId logCmd, const Sb
 	//
 	switch (logCmd)
 	{
+#if 0
 	case SBG_ECOM_LOG_EKF_EULER:
 		//
 		// Simply display euler angles in real time
 		//
-		printf("Euler Angles: %3.1f\t%3.1f\t%3.1f\tStd Dev:%3.1f\t%3.1f\t%3.1f   \r", 
+		printf("%d, Euler Angles: %3.1f\t%3.1f\t%3.1f\tStd Dev:%3.1f\t%3.1f\t%3.1f   \r",  clock(), 
 				sbgRadToDegF(pLogData->ekfEulerData.euler[0]), sbgRadToDegF(pLogData->ekfEulerData.euler[1]), sbgRadToDegF(pLogData->ekfEulerData.euler[2]), 
 				sbgRadToDegF(pLogData->ekfEulerData.eulerStdDev[0]), sbgRadToDegF(pLogData->ekfEulerData.eulerStdDev[1]), sbgRadToDegF(pLogData->ekfEulerData.eulerStdDev[2]));
 		break;
+#else
+	case SBG_ECOM_LOG_GPS1_POS:
+		//
+		// Simply display euler angles in real time
+		//
+		printf("%d, GPS Position: %3.1f\t%3.1f\t%3.1f \r", clock(), 
+			pLogData->gpsPosData.latitude, pLogData->gpsPosData.longitude, pLogData->gpsPosData.altitude);
+		break;
+#endif
 	default:
 		break;
 	}
