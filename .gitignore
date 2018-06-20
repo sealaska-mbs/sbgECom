@@ -1,0 +1,7 @@
+*Release
+*Debug
+*.opensdf
+*.sdf
+*.suo
+*.lib
+/sbgECom/*.lib
