@@ -33,6 +33,9 @@ public:
 	void	SetCountLines(int val)				{ m_lines = val; }
 	void	SetDeviceScanRepeatBool(bool val)	{ m_bScanRepeat = val; }
 	void	SetDeviceScanRepeatCount(int val)	{ m_nScanRepeat = val; }
+	void	SetFlagValidGPS(bool val)			{ m_bValidGPS = val; }	
+
+	bool	GetFlagValidGPS()		{ return m_bValidGPS; }
 
 protected:
 
@@ -80,5 +83,6 @@ private:
 	int		m_nScanRepeat;	// 重复行扫描次数
 	int		m_nScanRepeatCurrent;	// 重复行扫描当前次数 
 
+	bool	m_bValidGPS; 
 };
 

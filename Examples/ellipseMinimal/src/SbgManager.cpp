@@ -90,6 +90,9 @@ bool SbgManager::initialize()
 	sbgEComSetReceiveCallback(&comHandle, recFunc, this);
 
 	m_bInitialized = true;
+
+	m_bValidGPS = false;
+
 	return true;
 
 }
@@ -137,6 +140,10 @@ SbgErrorCode onLogReceived(SbgEComHandle *pHandle, SbgEComCmdId logCmd, const Sb
 {
 	SbgManager* pSM = (SbgManager*)pUserArg;
 	char msgLog[4096];
+	SbgEComGpsPosStatus stat = (SbgEComGpsPosStatus)0;
+	SbgEComGpsPosType type = (SbgEComGpsPosType)0;
+	int	status = 0;
+
 	//
 	// Handle separately each received data according to the log ID
 	//
@@ -156,8 +163,18 @@ SbgErrorCode onLogReceived(SbgEComHandle *pHandle, SbgEComCmdId logCmd, const Sb
 
 	case SBG_ECOM_LOG_GPS1_POS:
 		//
-		// Simply display euler angles in real time
+		// Simply log out gps in real time
 		//
+		status = pLogData->gpsPosData.status;
+		
+		stat = sbgEComLogGpsPosGetStatus(status);
+		type = sbgEComLogGpsPosGetType(status);
+
+		if (SBG_ECOM_POS_SOL_COMPUTED != stat || SBG_ECOM_POS_SINGLE <= type)
+			break;
+		
+		pSM->SetFlagValidGPS( true );
+
 		sprintf(msgLog, "%f\t\t%f\t\t%f",
 			pLogData->gpsPosData.latitude, pLogData->gpsPosData.longitude, pLogData->gpsPosData.altitude);
 
@@ -308,6 +325,8 @@ void SbgManager::outputLog(const char* message, SBG_LOG_TYPE m_eType, int type /
 {
 
 	//std::string stringTime = FormatTimeString();
+	if (!GetFlagValidGPS())
+		return;
 
 	if (type & LOG_TYPE_FILE)
 	{
