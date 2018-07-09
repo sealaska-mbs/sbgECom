@@ -38,6 +38,8 @@
 int main(int argc, char** argv)
 {
 	SbgManager	sm;
+	sm.SetCountLines(100);
+	sm.SetParameter(5);
 
 	sm.run();
 

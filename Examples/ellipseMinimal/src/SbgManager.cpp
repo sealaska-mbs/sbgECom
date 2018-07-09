@@ -170,7 +170,7 @@ SbgErrorCode onLogReceived(SbgEComHandle *pHandle, SbgEComCmdId logCmd, const Sb
 		stat = sbgEComLogGpsPosGetStatus(status);
 		type = sbgEComLogGpsPosGetType(status);
 
-		if (SBG_ECOM_POS_SOL_COMPUTED != stat || SBG_ECOM_POS_SINGLE <= type)
+		if (SBG_ECOM_POS_SOL_COMPUTED != stat || SBG_ECOM_POS_SINGLE > type)
 			break;
 		
 		pSM->SetFlagValidGPS( true );
