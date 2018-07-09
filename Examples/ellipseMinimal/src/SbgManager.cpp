@@ -1,6 +1,7 @@
 
 #include "SbgManager.h"
 
+#include <iomanip>
 
 SbgManager::SbgManager()
 {
@@ -14,10 +15,23 @@ SbgManager::~SbgManager()
 
 bool SbgManager::initialize()
 {
+	m_lines = 0;
+	m_bScanRepeat = false;
+	m_nScanRepeat = 0;
+	m_nScanRepeatCurrent = 0;
 
+	m_bInitialized = false;
+	m_fps = 5;
 	m_hThread = 0;
 	m_fStopping = false;
+	m_nLastClock = 0;
+	m_nFrameCurrent = 0;
+	m_sFileNameLog = "0000.sbg.log";
 
+	m_pFileLog.open(m_sFileNameLog.c_str(), std::ios::out);
+
+	//outputLog("latitude \t longitude \t altitude ", SBG_LOG_TYPE_ANGLE);
+	//outputLog("yaw	\t\t roll	\t\t pitch ", SBG_LOG_TYPE_GPS);
 	//
 	// Create an interface: 
 	// We can choose either a serial for real time operation, or file for previously logged data parsing
@@ -32,7 +46,7 @@ bool SbgManager::initialize()
 		// Unable to create the interface
 		//
 		fprintf(stderr, "ellipseMinimal: Unable to create the interface.\n");
-		retValue = -1;
+		return false;
 	}
 
 	errorCode = sbgEComInit(&comHandle, &sbgInterface);
@@ -43,7 +57,7 @@ bool SbgManager::initialize()
 		// Unable to initialize the sbgECom
 		//
 		fprintf(stderr, "ellipseMinimal: Unable to initialize the sbgECom library.\n");
-		retValue = -1;
+		return false;
 	}
 
 	//
@@ -56,36 +70,26 @@ bool SbgManager::initialize()
 	//
 	if (errorCode == SBG_NO_ERROR)
 	{
-		printf("Device : %0.9u found\n", deviceInfo.serialNumber);
+		;// printf("Device : %0.9u found\n", deviceInfo.serialNumber);
 	}
 	else
 	{
 		fprintf(stderr, "ellipseMinimal: Unable to get device information.\n");
-	}
-
-	//
-	// Configure some output logs to 25 Hz
-	//
-	if (sbgEComCmdOutputSetConf(&comHandle, SBG_ECOM_OUTPUT_PORT_A, SBG_ECOM_CLASS_LOG_ECOM_0, SBG_ECOM_LOG_IMU_DATA, SBG_ECOM_OUTPUT_MODE_DIV_8) != SBG_NO_ERROR)
-	{
-		fprintf(stderr, "ellipseMinimal: Unable to configure output log SBG_ECOM_LOG_IMU_DATA.\n");
-	}
-	if (sbgEComCmdOutputSetConf(&comHandle, SBG_ECOM_OUTPUT_PORT_A, SBG_ECOM_CLASS_LOG_ECOM_0, SBG_ECOM_LOG_EKF_EULER, SBG_ECOM_OUTPUT_MODE_DIV_8) != SBG_NO_ERROR)
-	{
-		fprintf(stderr, "ellipseMinimal: Unable to configure output log SBG_ECOM_LOG_EKF_EULER.\n");
+		return false;
 	}
 
 	//
 	// Display a message for real time data display
 	//
-	printf("sbgECom properly Initialized.\n\nEuler Angles display with estimated standard deviation.\n");
+	//printf("sbgECom properly Initialized.\n\nEuler Angles display with estimated standard deviation.\n");
 
 	SbgEComReceiveFunc recFunc = onLogReceived;
 	//
 	// Define callbacks for received data
 	//
-	sbgEComSetReceiveCallback(&comHandle, recFunc, NULL);
+	sbgEComSetReceiveCallback(&comHandle, recFunc, this);
 
+	m_bInitialized = true;
 	return true;
 
 }
@@ -103,6 +107,8 @@ bool SbgManager::release()
 
 bool SbgManager::run()
 {
+	if (!isInitialized())
+		return false;
 
 	m_fStopping = false;
 	StartListener();
@@ -129,29 +135,36 @@ bool SbgManager::GetStoppingState()
 */
 SbgErrorCode onLogReceived(SbgEComHandle *pHandle, SbgEComCmdId logCmd, const SbgBinaryLogData *pLogData, void *pUserArg)
 {
+	SbgManager* pSM = (SbgManager*)pUserArg;
+	char msgLog[4096];
 	//
 	// Handle separately each received data according to the log ID
 	//
 	switch (logCmd)
 	{
-#if 0
+
 	case SBG_ECOM_LOG_EKF_EULER:
 		//
 		// Simply display euler angles in real time
 		//
-		printf("%d, Euler Angles: %3.1f\t%3.1f\t%3.1f\tStd Dev:%3.1f\t%3.1f\t%3.1f   \r", clock(),
-			sbgRadToDegF(pLogData->ekfEulerData.euler[0]), sbgRadToDegF(pLogData->ekfEulerData.euler[1]), sbgRadToDegF(pLogData->ekfEulerData.euler[2]),
-			sbgRadToDegF(pLogData->ekfEulerData.eulerStdDev[0]), sbgRadToDegF(pLogData->ekfEulerData.eulerStdDev[1]), sbgRadToDegF(pLogData->ekfEulerData.eulerStdDev[2]));
+		sprintf(msgLog, "%3.1f\t\t%3.1f\t\t%3.1f ", 
+			sbgRadToDegF(pLogData->ekfEulerData.euler[0]), sbgRadToDegF(pLogData->ekfEulerData.euler[1]), sbgRadToDegF(pLogData->ekfEulerData.euler[2]));
+		
+		pSM->outputLog(msgLog, SBG_LOG_TYPE_ANGLE);
+
 		break;
-#else
+
 	case SBG_ECOM_LOG_GPS1_POS:
 		//
 		// Simply display euler angles in real time
 		//
-		printf("%d, GPS Position: %3.1f\t%3.1f\t%3.1f \r", clock(),
+		sprintf(msgLog, "%f\t\t%f\t\t%f",
 			pLogData->gpsPosData.latitude, pLogData->gpsPosData.longitude, pLogData->gpsPosData.altitude);
+
+		pSM->outputLog(msgLog, SBG_LOG_TYPE_GPS);
+
 		break;
-#endif
+
 	default:
 		break;
 	}
@@ -241,4 +254,128 @@ DWORD SbgManager::ThreadProc(void)
 
 	// Bye bye
 	return 0;
+}
+
+std::string SbgManager::FormatTimeString()
+{
+	time_t t;
+	struct tm * lt;
+	time(&t);//获取Unix时间戳。
+	lt = localtime(&t);//转为时间结构。
+	std::ostringstream os;
+	os /*<< lt->tm_year + 1900 << '/'
+		<< lt->tm_mon << '/'
+		<< lt->tm_mday << ' '
+		<< lt->tm_hour << ':'
+		<< lt->tm_min << ':'
+		<< lt->tm_sec << ' '*/
+		<< clock()/1000.0f << "\t\t";
+	return std::string(os.str());
+}
+
+void SbgManager::scanRepeat()
+{
+	if (m_bScanRepeat && m_nScanRepeatCurrent < m_nScanRepeat)
+	{
+		m_nScanRepeatCurrent++;
+
+		if (m_nScanRepeatCurrent < m_nScanRepeat)
+		{
+			m_nFrameCurrent = 0;
+
+			// create new bil 
+			std::ostringstream os;
+			os << std::setw(4) << std::setfill('0') << m_nScanRepeatCurrent << ".sbg.log";
+
+			m_pFileLog.open(os.str().c_str(), std::ios::out);
+
+		}
+		else
+		{
+			m_fStopping = true;
+			outputLog("...持续行扫描结束！写入文件数");
+		}
+
+	}
+	else
+	{
+		m_fStopping = true;
+		outputLog("...一次性行扫描结束！");
+	}
+}
+
+void SbgManager::outputLog(const char* message, SBG_LOG_TYPE m_eType, int type /*= LOG_TYPE_FILE */)
+{
+
+	//std::string stringTime = FormatTimeString();
+
+	if (type & LOG_TYPE_FILE)
+	{
+		long msTime = clock(); 
+		//if (abs(msTime - m_nLastClock) < 50)
+		{
+			if (m_eType & SBG_LOG_TYPE_ANGLE)
+			{
+				m_osCache[0] << m_nFrameCurrent << "\t\t";
+
+				m_osCache[0] << message << "\t\t";
+			}
+			
+			if (m_eType & SBG_LOG_TYPE_GPS)
+			{
+				m_osCache[1] << message << "\t\t";
+
+				m_osCache[1] << clock() / 1000.0f << std::endl;
+				
+				if (false == m_osCache[0].str().empty())
+					m_pFileLog << m_osCache[0].str() << m_osCache[1].str();
+				else
+					m_nFrameCurrent--;
+
+				m_osCache[0].str("");
+				m_osCache[1].str("");
+
+				if (++m_nFrameCurrent == m_lines)
+				{
+					m_pFileLog.close();
+
+					if (!m_bScanRepeat)
+						StopListener(100);
+
+					scanRepeat();
+				}
+			}
+
+			m_pFileLog.flush();
+		}
+
+		m_nLastClock = msTime;
+	}
+
+}
+
+bool SbgManager::SetParameter(int fps)
+{
+	if (!isInitialized())
+		return false;
+
+	m_fps = fps;
+
+	_SbgEComOutputMode mode = _SbgEComOutputMode(200 / fps);
+
+	//
+	// Configure some output logs to 25 Hz
+	//
+	if (sbgEComCmdOutputSetConf(&comHandle, SBG_ECOM_OUTPUT_PORT_A, SBG_ECOM_CLASS_LOG_ECOM_0, SBG_ECOM_LOG_EKF_EULER, mode) != SBG_NO_ERROR)
+	{
+		fprintf(stderr, "ellipseMinimal: Unable to configure output log SBG_ECOM_LOG_EKF_EULER.\n");
+		return false;
+	}
+
+	return true;
+}
+
+bool SbgManager::isInitialized()
+{
+	return m_bInitialized;
 }
