@@ -75,7 +75,7 @@
  *	Macro used to abstract the compiler specific inline keyword.
  */
 #ifndef SBG_INLINE
-	#ifdef WIN32
+	#if defined (WIN32) || defined (WIN64)
 		#define SBG_INLINE			__inline
 	#else
 		#define SBG_INLINE          static inline

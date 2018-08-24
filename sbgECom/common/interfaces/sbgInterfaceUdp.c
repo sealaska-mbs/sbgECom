@@ -1,6 +1,6 @@
 #include "sbgInterfaceUdp.h"
 
-#ifdef WIN32
+ #if defined (WIN32) || defined (WIN64)
 	#include <winsock2.h>
 	#include <WS2tcpip.h>
 #else
@@ -34,7 +34,7 @@
  */
 SbgErrorCode sbgInterfaceUdpInitSockets(void)
 {
-#ifdef WIN32
+ #if defined (WIN32) || defined (WIN64)
 		WSADATA wsaData;
 
 		//
@@ -62,7 +62,7 @@ SbgErrorCode sbgInterfaceUdpInitSockets(void)
  */
 SbgErrorCode sbgInterfaceUpdateCloseSockets(void)
 {
-#ifdef WIN32
+ #if defined (WIN32) || defined (WIN64)
 		//
 		// Release windows sockets
 		//
@@ -90,7 +90,7 @@ SbgErrorCode sbgInterfaceUpdateCloseSockets(void)
  */
 SbgErrorCode sbgInterfaceUdpSetSocketBlocking(SOCKET socketHandle, bool blocking)
 {
-#ifdef WIN32
+ #if defined (WIN32) || defined (WIN64)
 	u_long blockingMode;
 
 	//
@@ -596,7 +596,7 @@ SbgErrorCode sbgInterfaceUdpRead(SbgInterface *pHandle, void *pBuffer, uint32 *p
 		}
 		else
 		{
-			#ifdef WIN32
+			 #if defined (WIN32) || defined (WIN64)
 			//
 			// Get the last error during the read
 			//

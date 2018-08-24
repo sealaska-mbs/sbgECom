@@ -5,7 +5,7 @@
 //----------------------------------------------------------------------//
 //- Include specific header for WIN32 and UNIX platforms               -//
 //----------------------------------------------------------------------//
-#ifdef WIN32
+ #if defined (WIN32) || defined (WIN64)
 	#include <windows.h>
 #else
 	#include <unistd.h>
@@ -36,7 +36,7 @@ void sbgSleep(uint32 ms)
 	//
 	// Implementation valid for both WIN and UNIX systems
 	//
-	#ifdef WIN32
+	 #if defined (WIN32) || defined (WIN64)
 		Sleep(ms);
 	#else
 		usleep(ms*1000);
