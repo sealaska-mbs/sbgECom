@@ -183,7 +183,7 @@ int main(int argc, char** argv)
 	// We can choose either a serial for real time operation, or file for previously logged data parsing
 	// Note interface closing is also differentiated !
 	//
-	errorCode = sbgInterfaceSerialCreate(&sbgInterface, "/dev/cu.usbserial-FTX2GE57", 921600);		// Example for Unix using a FTDI Usb2Uart converter
+	errorCode = sbgInterfaceSerialCreate(&sbgInterface, "COM8", 115200);		// Example for Unix using a FTDI Usb2Uart converter
 	//errorCode = sbgInterfaceSerialCreate(&sbgInterface, "COM23", 115200);								// Example for Windows serial communication
 
 	//
